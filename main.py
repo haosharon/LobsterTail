@@ -22,10 +22,14 @@ class MainHandler(webapp.RequestHandler):
         elif self.request.get('lat') and self.request.get('long'):
             # user wants to hear local news.
     
+    # Given a location, will find a list of radio stations
+    # that have recorded mp3 stories, and another list of radio
+    # stations that can be tuned in to.
     def findLocal(lat, lon):
         query = {}
         query['lat'] = lat
         query['lon'] = lon
+        # Get url to query given the lat & long.
         url = buildStationFinder(query)
         result = fetchLocalResults(url)
     
@@ -57,9 +61,13 @@ class MainHandler(webapp.RequestHandler):
         url = buildQuery(query)
         result = fetchCategoryResults(url)
     
+    # Returns two lists:
+    # The first is a list of stations that have npr stories.
+    # The second is a list of stations that one can tune in to. 
     def fetchLocalResults(url):
         xml = urlfetch.fetch(url).content
         soup = bss(xml)
+        # TODO: search in soup to find the stations.
         
     ## Given a query url, takes relevant information from resulting xml.
     ## Returns a list of the form [[...], [...], [....], [...], ...]
