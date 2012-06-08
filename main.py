@@ -22,6 +22,7 @@ class MainHandler(webapp.RequestHandler):
     ## Given a method of searching (topic / location) 
     ## finds the results of that search query.
     def post(self):
+        self.p('<html>')
         if self.request.get('topic'):
             self.findTopic(self.request.get('topic'))
         elif self.request.get('lat') and self.request.get('long'):
@@ -32,6 +33,7 @@ class MainHandler(webapp.RequestHandler):
             self.findLocalCity(self.request.get('city'))
         else:
             self.p('error')
+        self.p('</html>')
     
     # Given a location, will find a list of radio stations
     # that have recorded mp3 stories, and another list of radio
@@ -40,13 +42,13 @@ class MainHandler(webapp.RequestHandler):
         # Get url to query given the lat & long.
         url = self.BASE_URL + 'stations?' + 'lat=' + str(lat) + '&lon=' + str(lon) + '&apiKey=' + self.API_KEY
         result = self.fetchLocalResults(url)
-        self.p(result)
+        self.printListToCSV(result)
     
     def findLocalZip(self, zipcode):
-        url = self.BASE_URL + 'stations?' + 'zip=' + zipcode + '&apiKey=' + self.API_KEY
+        url = self.BASE_URL + 'stations?' + 'zip=' + str(zipcode) + '&apiKey=' + self.API_KEY
         logging.info('url: ' + url)
         result = self.fetchLocalResults(url)
-        self.p(result)
+        self.printListToCSV(result)
     
     ## Given a topic (must be one of a predefined list)
     ## Will generate an npr api query for that topic.
@@ -57,7 +59,7 @@ class MainHandler(webapp.RequestHandler):
         url = self.BASE_URL + 'query?' + 'id=' + topic_id + '&fields=' + self.FIELDS + '&output=' + self.OUTPUT + '&apiKey=' + self.API_KEY 
         logging.info('url: ' + url)
         result = self.fetchCategoryResults(url)
-        self.p(result)
+        self.printListToCSV(result)
     
     # Returns a list of stations that one can tune in to. 
     # List is of the form [[station name, frequency], ...]
@@ -115,10 +117,10 @@ class MainHandler(webapp.RequestHandler):
             i = 0
             while i < len(item):
                 if i > 0:
-                    result += ','
-                result += item[i]
+                    result += ', '
+                result += '"' + item[i] + '"'
                 i += 1
-            result += '\n'
+            result += '</br>'
         self.response.out.write(result)    
 
 def main():

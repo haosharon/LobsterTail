@@ -1,15 +1,16 @@
 categories = '''
-afghanistan: 1149
-africa: 1126
-analysis: 1059
-animals: 1132
-architecture: 1142
-around the nation: 1091
-art and design: 1047
-arts and life: 1008
-asia: 1125
-author interviews: 1033
-book reviews: 1034
+food: 1053
+health: 1128
+business: 1006
+art: 1047
+politics: 1014
+sports: 1055
+world: 10004
+u.s.: 1003
+movies: 1045
+technology: 1019
+science: 1007
+economy: 1017
 '''
 
 def create():
