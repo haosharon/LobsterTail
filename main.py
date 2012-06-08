@@ -8,6 +8,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
 from google.appengine.api import urlfetch
 
+
 class MainHandler(webapp.RequestHandler):
     API_KEY = 'MDA5NTMyMTcyMDEzMzgzMTYwMTU1ZDhlOA001'
     BASE_URL = 'http://api.npr.org/'
@@ -27,23 +28,17 @@ class MainHandler(webapp.RequestHandler):
             self.findLocal(self.request.get('lat'), self.request.get('long'))
         elif self.request.get('zip'):
             self.findLocalZip(self.request.get('zip'))
+        elif self.request.get('city'):
+            self.findLocalCity(self.request.get('city'))
         else:
-            #testing
-            logging.info('started app')
-            #topic = 'afghanistan'
-            #self.findTopic(topic)
-            zipcode = '95129'
-            self.findLocalZip(zipcode)
+            self.p('error')
     
     # Given a location, will find a list of radio stations
     # that have recorded mp3 stories, and another list of radio
     # stations that can be tuned in to.
     def findLocal(self, lat, lon):
-        query = {}
-        query['lat'] = lat
-        query['lon'] = lon
         # Get url to query given the lat & long.
-        url = self.BASE_URL + 'stations?' + 'lat=' + lat + '&lon=' + lon + '&apiKey=' + self.API_KEY
+        url = self.BASE_URL + 'stations?' + 'lat=' + str(lat) + '&lon=' + str(lon) + '&apiKey=' + self.API_KEY
         result = self.fetchLocalResults(url)
         self.p(result)
     
@@ -73,24 +68,15 @@ class MainHandler(webapp.RequestHandler):
         stations = soup.findAll('station')
         logging.info('found %s stations' % len(stations))
         for station in stations:
-            call_letters = station.find('callLetters')
+            name = station.find('name')
             band = station.find('band')
             freq = station.find('frequency')
-            logging.info('here')
-            if call_letters == None:
-                logging.info('cl')
-            if band == None:
-                logging.info('band')
-            if freq == None:
-                logging.info('freq')
-            if call_letters and (band and freq):
+            if name and band and freq:
                 logging.info('in')
                 res = []
-                res.append(call_letters.contents[0])
+                res.append(str(name.contents[0]))
                 channel = band.contents[0] + ' ' + freq.contents[0]
-                logging.info('channel' + channel)
-                res.append(channel)
-                logging.info('call letters' + call_letters.contents[0])
+                res.append(str(channel))
                 result.append(res)
         return result
                         
