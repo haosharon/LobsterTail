@@ -1,6 +1,5 @@
 import categories
 from BeautifulSoup import BeautifulStoneSoup as bss
-from django.utils import simplejson
 import logging
 import re
 import string
