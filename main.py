@@ -3,6 +3,7 @@ from BeautifulSoup import BeautifulStoneSoup as bss
 import logging
 import re
 import string
+import random
 
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp import util
@@ -27,7 +28,8 @@ class Twitter(webapp.RequestHandler):
             mode = STATION
         else:
             mode = STORY
-            title = 'How+the+world+celebrates+national+groundhog+day'
+            r = random.randint(1, 1000000)
+            title = 'How+the+world+celebrates+national+groundhog+day' + str(r)
             mp3 = 'mp3link.mp3'
             station = 'WVTF-FM'
             freq = 'FM 89.1'
@@ -38,28 +40,10 @@ class Twitter(webapp.RequestHandler):
         else:
             title = title.replace('+', ' ')
             tweet = 'I just listened to "' + title + '" via StarNews! You can listen as well at this link: ' + mp3           
-        self.response.out.write(tweet)
         mail.send_mail(sender="lmsstarnews@gmail.com",
                        to="tweet@tweetymail.com",
                        subject="",
                        body=tweet)
-        self.response.out.write('email sent')
-
-class Facebook(webapp.RequestHandler):
-    def get(self):
-        self.post()
-    
-    def post(self):
-        #title = self.request.get('title')
-        title = 'How+the+world+celebrates+national+groundhog+day'
-        title = title.replace('+', ' ')
-        mp3 = 'mp3link.mp3'
-        string = 'I just listened to "' + title + '" via StarNews! You can listen as well at this link: ' + mp3
-        mail.send_mail(sender="lmsstarnews@gmail.com",
-                       to="tweet@tweetymail.com",
-                       subject="",
-                       body=string)
-        self.response.out.write('email sent')
 
 class MainHandler(webapp.RequestHandler):
     API_KEY = 'MDA5NTMyMTcyMDEzMzgzMTYwMTU1ZDhlOA001'
@@ -83,7 +67,7 @@ class MainHandler(webapp.RequestHandler):
         elif self.request.get('city'):
             self.findLocalCity(self.request.get('city'))
         else:
-            topic = 'art'
+            topic = 'health'
             self.findTopic(topic)
             self.p('error')
     
@@ -102,7 +86,6 @@ class MainHandler(webapp.RequestHandler):
     
     def findLocalZip(self, zipcode):
         url = self.BASE_URL + 'stations?' + 'zip=' + str(zipcode) + '&apiKey=' + self.API_KEY
-        logging.info('url: ' + url)
         result = self.fetchLocalResults(url)
         self.printListToCSV(result)
     
@@ -113,7 +96,6 @@ class MainHandler(webapp.RequestHandler):
         query = {}
         topic_id = categories.get_id(topic)
         url = self.BASE_URL + 'query?' + 'id=' + topic_id + '&fields=' + self.FIELDS + '&output=' + self.OUTPUT + '&apiKey=' + self.API_KEY 
-        logging.info('url: ' + url)
         result = self.fetchCategoryResults(url)
         self.printListToCSV(result)
     
@@ -124,13 +106,11 @@ class MainHandler(webapp.RequestHandler):
         xml = urlfetch.fetch(url).content
         soup = bss(xml)
         stations = soup.findAll('station')
-        logging.info('found %s stations' % len(stations))
         for station in stations:
             name = station.find('name')
             band = station.find('band')
             freq = station.find('frequency')
             if name and band and freq:
-                logging.info('in')
                 res = []
                 res.append(str(name.contents[0]))
                 channel = band.contents[0] + ' ' + freq.contents[0]
@@ -143,11 +123,9 @@ class MainHandler(webapp.RequestHandler):
     def fetchCategoryResults(self, url):
         result = []
         xml = urlfetch.fetch(url).content
-        logging.error('fetched')
         soup = bss(xml)
         stories = soup.findAll('story')
-        logging.info('found stories')
-        for story in stories:
+        for story in stories:            
             story_id = story['id']
             titles = story.findAll('title')
             if len(titles) > 0:
@@ -155,21 +133,31 @@ class MainHandler(webapp.RequestHandler):
                 mp3_tag = story.findAll('mp3')
                 if len(mp3_tag) > 0:
                     mp3 = mp3_tag[0].contents[0]
+                    text = str(urlfetch.fetch(mp3).content)
+                    text = text.replace('\n', '')
+                    index = text.find('.mp3')
+                    text = text[:index + 4]
+                    title_valid = title.replace(' ', '+').replace(':', '-')
                     res = []
                     res.append(str(title + ''))
-                    res.append(str(mp3))
+                    res.append(text)
+                    res.append(title_valid)
                     result.append(res)
         return result
         
     def p(self, string):
         self.response.out.write(string)
-                        
 
     ## Given a list of the form [[..], [..], [..], [..], ...]
     ## prints the items as a csv.
     def printListToCSV(self, items):
         result = ''
+        limit = 10
+        count = 1
         for item in items:
+            if count > limit:
+                break
+            count += 1
             i = 0
             while i < len(item):
                 if i > 0:
@@ -181,7 +169,10 @@ class MainHandler(webapp.RequestHandler):
         self.response.out.write(result)    
 
 def main():
-    application = webapp.WSGIApplication([('/', MainHandler), ('/twitter', Twitter)], debug = True)        
+    application = webapp.WSGIApplication([('/', MainHandler), 
+                                          ('/twitter', Twitter),
+                                          ('/link', Link)], 
+                                          debug = True)        
     util.run_wsgi_app(application)
 
 if __name__=='__main__':
